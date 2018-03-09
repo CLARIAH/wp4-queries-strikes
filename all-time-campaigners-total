@@ -1,0 +1,43 @@
+#+ summary: Example: show all time total number of people on strike  
+#+ tags:
+#+   - strikes
+#+   - campaigns
+#+   - Toogdag 2018
+
+####### Thank you @wouterbeek for this example query
+
+# Please notice the cool stuff:
+#  - The use of `?wkt`, `?wktColor`, and `?wktLabel` to draw the results on a map.
+#  - `replace` function adds a thousands seperator (Dutch style) in total number of campaigners (works for all integers)
+#  - The `select` in a `select` allows the 50 biggest municipalities to be highlighted, while using the count label `?n`.
+#  - The `filter not exists` makes sure that only the most recent polygon is bound to `?wkt`.
+
+prefix geo: <http://www.opengis.net/ont/geosparql#>
+prefix gg: <http://www.gemeentegeschiedenis.nl/gg-schema#>
+prefix iisg: <https://iisg.amsterdam/vocab/>
+prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+select ?wkt ?wktColor ?wktLabel {
+  {
+    select ?wkt ?string2 (sum(?n) as ?n) {
+      ?staking iisg:place ?string1 ;
+               iisg:number-of-campaigners ?n .
+      ?gemeente rdfs:label ?string2 ;
+                geo:hasGeometry ?geo1 .
+      filter (str(?string1) = str(?string2))
+      ?geo1 geo:asWKT ?wkt ;
+            gg:year ?year1 .
+      filter not exists {
+        ?gemeente geo:hasGeometry ?geo2 .
+        ?geo2 gg:year ?year2 .
+        filter (?year2 < ?year1)
+      }
+    }
+    group by ?wkt ?string2
+    order by desc(?n)
+    limit 50
+  }
+  bind (replace(str(?n),"[0-9](?=(?:[0-9]{3})+(?![0-9]))","$0.") as ?nSep)
+  bind (concat('<h2>',str(?string2),'</h2><h3>',str(?nSep),' cumulatief aantal stakers</h3>') as ?wktLabel)
+  bind (?n / 673538.0 as ?norm)
+  bind (concat("bluered,",?norm) as ?wktColor)
+}
