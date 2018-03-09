@@ -1,0 +1,3 @@
+https://api.druid.datalegend.net/datasets/dataLegend/gemeentegeschiedenis/services/endpoint/sparql
+
+# please contact @rlzijdeman if this endpoint appears not to be working.
